@@ -1,0 +1,100 @@
+---
+title: "Crab Prediction Project Project"
+author: "Milla Nielsen, Rohan Saklani, Alexis Adzich, Michael Gureghian"
+date: "2024-02-27"
+output: pdf_document
+---
+Load Data and Make Sex numerical variable:  
+```{r}
+library(MASS)
+library(car)
+library(ggplot2)
+library(GGally)
+crab_data <- read.csv("CrabAgePrediction.csv")
+attach(crab_data)
+#F = 1, I = 2, M = 3
+crab_data$Sex <- as.numeric(factor(crab_data$Sex))
+```
+
+```{r}
+cor(crab_data)
+```
+
+```{r}
+boxplot(crab_data)
+```
+
+```{r}
+
+```
+
+```{r}
+pairs(crab_data)
+```
+Multiple of the variables have what seem to have correlated relationships. Length and Diameter have what looks to be a positive linear correlation. This is also true for Length and Age, Diameter and Age, Weight and Shucked.Weight, Weight and Viscera.Weight, Weight and Shell.Weight, Weight and Age, Shucked.Weight and Viscera.Weight, Shucked.Weight and Shell.Weight, Shucked.Weight and Age, Viscera.Weight and Shell.Weight, Viscera.Weight and Age, and Shell.Weight and Age. Length and Height also seem to be correlated but not a one-to-one relationship. This also seems to be the case for Diameter and Height, Height and Weight, Height and Shucked.Weight, Height and Viscera.Weight, Height and Shell.Weight and, Height and Age. Length and Weight seem to be less linear and more similar to a polynomial model. This also seems to be the case for Length and Shucked.Weight, Length and Viscera.Weight, Length and Shell.Weight, Diameter and Weight, Diameter and Shucked.Weight, Diameter and Viscera.Weight, and, Diameter and Shell.Weight. The Sex variable is a little more difficult to analyze as it is a categorical variable and so it is harder to tell the correlation relationship with the other variables. 
+
+Models:
+```{r}
+model_1 <- lm(Age~Sex+Length+Diameter+Height+Weight+Viscera.Weight+Shucked.Weight+Shell.Weight+Age)
+summary(model_1)
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(model_1)
+```
+
+```{r}
+
+model_2 <- boxcox(lm(Age~Sex+Length+Diameter+Height+Weight+Viscera.Weight+Shucked.Weight+Shell.Weight+Age))
+summary(model_2)
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(model_2)
+```
+
+```{r}
+model_3 <- lm(log(Age)~Sex+Length+Diameter+Height+Weight+Viscera.Weight+Shucked.Weight+Shell.Weight+Age)
+summary(model_3)
+```
+
+
+```{r}
+par(mfrow = c(2,2))
+plot(model_3)
+```
+
+```{r}
+vif(model_3)
+```
+
+```{r}
+step_both <- stepAIC(model_3, direction="both")
+summary(step_both)
+```
+
+
+```{r}
+null_model <- lm(log(Age) ~ 1, data=crab_data)
+step_forward <- stepAIC(null_model, 
+                         scope=list(lower=null_model, upper=model_3), 
+                         direction="forward")
+summary(step_forward)
+```
+
+
+```{r}
+step_backward <- stepAIC(model_3, direction="backward")
+summary(step_backward)
+```
+
+```{r}
+reduced_model <- lm(log(Age) ~ Sex + Diameter + Height + 
+                       Weight + Shucked.Weight + 
+                       Viscera.Weight + Shell.Weight, 
+                     data = crab_data)
+anova(reduced_model, model_3)
+```
+
